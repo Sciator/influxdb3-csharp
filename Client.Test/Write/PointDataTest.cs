@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using InfluxDB3.Client.Write;
 
@@ -121,6 +122,24 @@ namespace InfluxDB3.Client.Test.Write
                 .AddField("level", 2);
 
             Assert.That(point.ToLineProtocol(), Is.EqualTo("h2o,location=europe level=2i"));
+        }
+
+        [Test]
+        public void DefaultTags()
+        {
+            var point = PointData.Measurement("h2o")
+                .AddTag("tag2", "val")
+                .AddField("field", 1);
+
+            var defaultTags = new Dictionary<string, string>() {
+                {"tag1", "default"},
+                {"tag2", "--"},
+                {"a", "b"},
+            };
+
+            Assert.That(point.ToLineProtocol(defaultTags:defaultTags), Is.EqualTo("h2o,a=b,tag1=default,tag2=val field=1i"));
+            Assert.That(point.ToLineProtocol(defaultTags:null), Is.EqualTo("h2o,tag2=val field=1i"));
+            Assert.That(point.ToLineProtocol(defaultTags:new Dictionary<string, string>()), Is.EqualTo("h2o,tag2=val field=1i"));
         }
 
         [Test]

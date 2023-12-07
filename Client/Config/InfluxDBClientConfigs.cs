@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using InfluxDB3.Client.Write;
 
 namespace InfluxDB3.Client.Config;
@@ -42,6 +43,35 @@ public class InfluxDBClientConfigs
     /// The default precision to use for the timestamp of points if no precision is specified in the write API call.
     /// </summary>
     public WritePrecision? WritePrecision { get; set; }
+
+    /// <summary>
+    /// Tags added to each point during writing. If a point already has a tag with the same key, it is left unchanged.
+    /// <example>
+    /// <code>
+    /// <![CDATA[
+    /// var _client = new InfluxDBClient(new InfluxDBClientConfigs
+    /// {
+    ///     HostUrl = "some-url",
+    ///     Organization = "org",
+    ///     Database = "database",
+    ///     DefaultTags = new Dictionary \<string, string ()
+    ///     {
+    ///         { "rack", "main" },
+    ///     }
+    /// });
+    /// 
+    /// // Writes with rack=main tag
+    /// await _client.WritePointAsync(PointData
+    ///     .Measurement("cpu")
+    ///     .AddField("field", 1)
+    /// );
+    /// ]]>
+    /// </code>
+    /// </example>
+    /// </summary>
+    public Dictionary<string, string>? DefaultTags { get; set; }
+
+
 
     /// <summary>
     /// Timeout to wait before the HTTP request times out. Default to '10 seconds'.

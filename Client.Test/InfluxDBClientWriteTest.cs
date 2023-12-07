@@ -131,6 +131,36 @@ public class InfluxDBClientWriteTest : MockServerTest
     }
 
     [Test]
+    public async Task DefaultTags()
+    {
+        MockServer
+            .Given(Request.Create().WithPath("/api/v2/write").UsingPost())
+            .RespondWith(Response.Create().WithStatusCode(204));
+
+        _client = new InfluxDBClient(new InfluxDBClientConfigs
+        {
+            HostUrl = MockServerUrl,
+            Organization = "org",
+            Database = "database",
+            DefaultTags = new System.Collections.Generic.Dictionary<string, string>()
+            {
+                { "tag1", "default" },
+                { "tag2", "default" },
+            }
+        });
+
+        await _client.WritePointAsync(PointData
+            .Measurement("cpu")
+            .AddTag("tag", "c")
+            .AddTag("tag2", "c")
+            .AddField("field", 1)
+        );
+
+        var requests = MockServer.LogEntries.ToList();
+        Assert.That(requests[0].RequestMessage.BodyData?.BodyAsString, Is.EqualTo("cpu,tag=c,tag1=default,tag2=c field=1i"));
+    }
+
+    [Test]
     public void NotSpecifiedDatabase()
     {
         _client = new InfluxDBClient(MockServerUrl, organization: "org");

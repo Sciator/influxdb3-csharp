@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -272,12 +273,12 @@ namespace InfluxDB3.Client.Write
         /// </summary>
         /// <param name="timeUnit">the timestamp precision</param>
         /// <returns>Line Protocol</returns>
-        public string ToLineProtocol(WritePrecision? timeUnit = null)
+        public string ToLineProtocol(WritePrecision? timeUnit = null, Dictionary<string, string>? defaultTags = null)
         {
             var sb = new StringBuilder();
 
             EscapeKey(sb, _measurementName, false);
-            AppendTags(sb);
+            AppendTags(sb, defaultTags);
             var appendedFields = AppendFields(sb);
             if (!appendedFields)
             {
@@ -332,12 +333,20 @@ namespace InfluxDB3.Client.Write
         /// Appends the tags.
         /// </summary>
         /// <param name="writer">The writer.</param>
-        private void AppendTags(StringBuilder writer)
+        private void AppendTags(StringBuilder writer, Dictionary<string, string>? defaultTags = null)
         {
-            foreach (var keyValue in _tags)
+            var allKeys = _tags.Keys.Concat(defaultTags?.Keys ?? Enumerable.Empty<string>()).ToArray();
+            Array.Sort(allKeys);
+            var lastKey = "" == allKeys.FirstOrDefault() ? "_" : "";
+
+            foreach (var key in allKeys)
             {
-                var key = keyValue.Key;
-                var value = keyValue.Value;
+                if (key == lastKey) continue;
+                lastKey = key;
+
+                if (!_tags.TryGetValue(key, out string value)){
+                    value = defaultTags.First(kv => kv.Key == key).Value;
+                }
 
                 if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(value))
                 {
